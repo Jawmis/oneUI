@@ -19,5 +19,14 @@ export const AddMessageSchema = z.object({
 
 export type AddMessageSchemaType = z.infer<typeof AddMessageSchema>;
 
-export type IncomingMessageType = CreateSessionSchemaType | CreateWorkspaceSchemaType | AddMessageSchemaType;
+export type IncomingMessageType = {
+    type : "create-session",
+    payload : CreateSessionSchemaType
+} | {
+    type : "create-workspace",
+    payload : CreateWorkspaceSchemaType
+} | {
+    type : "add-message",
+    payload : AddMessageSchemaType
+};
 
