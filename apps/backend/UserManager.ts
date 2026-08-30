@@ -23,10 +23,11 @@ export class UserManager {
         const id = uuid()
         const user = new User(id, ws);
         this.users.push(user);
-        ws.on("message", (msg) => {
+        ws.on("message", async (msg) => {
             try {
                 const parsedMessage = JSON.parse(msg.toString());
-                user.handleIncomingMessage(parsedMessage);
+                const responsePayload = await user.handleIncomingMessage(parsedMessage);
+                user.sendMessage(responsePayload);
 
             } catch (e) {
                 console.error(`User sent non JSON format input`);

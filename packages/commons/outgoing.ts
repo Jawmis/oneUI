@@ -8,7 +8,7 @@ export type WorkspaceCreatedSchemaType = z.infer<typeof WorkspaceCreatedSchema>
 
 
 export const SessionCreated = z.object({ 
-id : z.string(),
+    id : z.string(),
 })
 
 export type SessionCreatedType = z.infer<typeof SessionCreated>;
