@@ -1,4 +1,4 @@
-# bun-react-template
+# bun-react-tailwind-shadcn-template
 
 To install dependencies:
 

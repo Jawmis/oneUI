@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 
-
-
-export function useSocket() {
+export function useSocket() { 
     const [ws, setWs] = useState(new WebSocket("ws://localhost:3000"));
     const [loading, setLoading] = useState(true);
 

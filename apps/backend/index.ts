@@ -9,8 +9,13 @@ import { UserManager } from './UserManager';
 
 mongoose.connect(process.env.DB_URL!)
     .then(() => {
+        console.log("mongoose connected");
+        const server = new WebSocketServer({
+            port: 3000
+        });
 
         server.on("connection", (ws) => {
+            console.log("ws connection done");
             UserManager.getInstance().addUser(ws);
         
         })
@@ -19,6 +24,3 @@ mongoose.connect(process.env.DB_URL!)
         console.log(e);
     });
 
-const server = new WebSocketServer({
-    port: 3000
-});
