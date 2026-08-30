@@ -7,8 +7,8 @@ export const Workspace = new mongoose.Schema({
 })
 export const Session = new mongoose.Schema({
     conversation: [Object],
-    workspaceId : [{type : mongoose.Schema.Types.ObjectId, ref : 'Workspace'}]
+    workspaceId : {type : mongoose.Schema.Types.ObjectId, ref : 'Workspace'}
 })
 
-export const SessionModel = mongoose.model("Session", Workspace);
+export const SessionModel = mongoose.model("Session", Session);
 export const WorkspaceModel = mongoose.model("Workspace", Workspace);
