@@ -18,3 +18,15 @@ export const MessageAdded = z.object({
 })
 
 export type MessageAddedType = z.infer<typeof MessageAdded>
+
+export type OutgoingMessageType =  {
+    type : "session-created",
+    payload : SessionCreatedType
+} | {
+    type : "workspace-created",
+    payload : WorkspaceCreatedSchemaType
+} | {
+    type : "message-added",
+    payload : MessageAddedType
+};
+
