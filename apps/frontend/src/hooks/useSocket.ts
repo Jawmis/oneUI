@@ -8,7 +8,8 @@ export function useSocket() {
   useEffect(() => {
     let stopped = false; let retry: ReturnType<typeof setTimeout> | undefined;
     const connect = () => {
-      const ws = new WebSocket(import.meta.env.VITE_BACKEND_URL ?? "ws://localhost:3000");
+      const backendUrl = (import.meta as ImportMeta & { env?: { VITE_BACKEND_URL?: string } }).env?.VITE_BACKEND_URL ?? "ws://localhost:3000";
+      const ws = new WebSocket(backendUrl);
       socketRef.current = ws;
       ws.onopen = () => { if (!stopped) { setSocket(ws); setLoading(false); } };
       ws.onmessage = (event) => { try { setMessages((current) => [...current, JSON.parse(event.data)]); } catch { /* ignore malformed frames */ } };
