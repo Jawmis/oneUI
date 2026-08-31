@@ -7,7 +7,7 @@ import { CreateWorkspaceSchema } from 'commons/types';
 import { UserManager } from './UserManager';
 
 
-mongoose.connect(process.env.DB_URL!)
+mongoose.connect(process.env.DB_URL ?? "mongodb://127.0.0.1:27017/oneui")
     .then(() => {
         console.log("mongoose connected");
         const server = new WebSocketServer({
@@ -23,4 +23,3 @@ mongoose.connect(process.env.DB_URL!)
     .catch(e => {
         console.log(e);
     });
-
