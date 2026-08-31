@@ -1,15 +1,11 @@
 import z from 'zod';
 
-export const WorkspaceCreatedSchema = z.object({
-    id : z.string(),
-})
+export const WorkspaceCreatedSchema = z.object({ id: z.string(), name: z.string(), path: z.string(), sessions: z.array(z.any()) })
 
 export type WorkspaceCreatedSchemaType = z.infer<typeof WorkspaceCreatedSchema>
 
 
-export const SessionCreated = z.object({ 
-    id : z.string(),
-})
+export const SessionCreated = z.object({ id: z.string(), title: z.string(), messages: z.array(z.any()) })
 
 export type SessionCreatedType = z.infer<typeof SessionCreated>;
 
@@ -30,7 +26,10 @@ export type OutgoingMessageType =  {
     payload : MessageAddedType
 } | {
     type : "init"
-    workspaces : Workspace[]
+    payload: { workspaces: Workspace[] }
+} | {
+    type: "thinking" | "tool" | "result" | "error"
+    payload: { sessionId: string; [key: string]: unknown }
 };
 
 export type Workspace = {
@@ -42,15 +41,15 @@ export type Workspace = {
 
 export type Session  = {
     id: string,
+    title: string,
     messages : Message[]
 }
-type Message = {
-    id : string,
-    role: "user",
-    payload: {
-        message : string
-    }
+export type Message = {
+    id: string,
+    type: "user" | "thinking" | "tool" | "result",
+    payload: Record<string, unknown> & { message?: string }
 } | {
-    role: "assistant",
-    payload : any
+    id: string,
+    type: "assistant",
+    payload: Record<string, unknown> & { message?: string }
 }

@@ -1,18 +1,15 @@
-import mongoose, { Mongoose } from 'mongoose';
+import mongoose from 'mongoose';
 
 export const Workspace = new mongoose.Schema({
-    path: String,
-    name: String,
-    // there is an id by default
-})
+    path: { type: String, required: true, trim: true },
+    name: { type: String, required: true },
+}, { timestamps: true });
 export const Session = new mongoose.Schema({
-    role: {
-        type: String,
-        enum: ['user', 'assistant']  
-    },
-    conversation: [Object],
-    workspace : {type : mongoose.Schema.Types.ObjectId, ref : 'Workspace'}
-})
+    workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace', required: true },
+    title: { type: String, default: 'New session' },
+    conversation: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    agentSessionId: { type: String, default: undefined },
+}, { timestamps: true });
 
 export const SessionModel = mongoose.model("Session", Session);
 export const WorkspaceModel = mongoose.model("Workspace", Workspace);

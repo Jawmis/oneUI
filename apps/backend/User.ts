@@ -1,6 +1,7 @@
 import { AddMessageSchema, CreateSessionSchema, CreateWorkspaceSchema, type IncomingMessageType, type OutgoingMessageType } from "commons/types";
-import { Session, SessionModel, WorkspaceModel } from "db/client";
+import { SessionModel, WorkspaceModel } from "db/client";
 import { WebSocket } from "ws";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 
 export class User{
     private socket: WebSocket;
@@ -17,7 +18,7 @@ export class User{
 
     async handleIncomingMessage(msg: IncomingMessageType) : Promise<OutgoingMessageType>{
         if (msg.type === 'create-workspace') {
-            const { success, data } = CreateWorkspaceSchema.safeParse(msg);
+            const { success, data } = CreateWorkspaceSchema.safeParse(msg.payload);
             if (!success) {
                 throw new Error("Incorrect Schema");
             }
@@ -27,57 +28,71 @@ export class User{
                 name : data.path.split("/").pop()
             })
 
-            return {
-                type : "workspace-created",
-                payload : {id : workspace._id.toString()}
-            }
+            return { type: "workspace-created", payload: { id: workspace._id.toString(), name: workspace.name, path: workspace.path, sessions: [] } };
             
         
         }
         if (msg.type === 'create-session') {
-            const { success, data } = CreateSessionSchema.safeParse(msg);
+            const { success, data } = CreateSessionSchema.safeParse(msg.payload);
             if (!success) {
                 throw new Error("Incorrect Schema");
             }
         
             const session = await SessionModel.create({
-                workspaceId:  data.workspaceId
-                ,
-                conversation : []
+                workspaceId: data.workspaceId,
+                conversation: [],
+                title: "New session",
             })
 
-            return {
-                type : "session-created",
-               payload : { id : session._id.toString()}
-            }
+            return { type: "session-created", payload: { id: session._id.toString(), title: session.title, messages: [] } };
             
         
         }
         if (msg.type === 'add-message') {
-            const { success, data } = AddMessageSchema.safeParse(msg);
+            const { success, data } = AddMessageSchema.safeParse(msg.payload);
             if (!success) {
                 throw new Error("Incorrect Schema");
             }
         
-            const workspace = await SessionModel.updateOne({
-                    id: data.sessionId
-                },{ 
-                conversation: {
-                    $push: {
-                        type: "user",
-                        payload: {
-                        message : data.message 
-                        }
-                    }
-                }
-            })
-
-            return {
-                type: "message-added",
-                payload: { id: "1" }
-            }
+            const session = await SessionModel.findByIdAndUpdate(data.sessionId, {
+                $push: { conversation: { id: crypto.randomUUID(), type: "user", payload: { message: data.message } } }
+            }, { new: true }).populate("workspaceId");
+            if (!session) throw new Error("Session not found");
+            void this.runAgent(data.sessionId, data.message, session);
+            return { type: "message-added", payload: { id: data.sessionId } };
         }
         throw new Error("Incorrect input schema");
 
+    }
+
+    private async runAgent(sessionId: string, prompt: string, session: any) {
+        try {
+            await this.sendMessage({ type: "thinking", payload: { sessionId, message: "Agent is thinking…" } });
+            const workspace = session.workspaceId;
+            const options = {
+                cwd: workspace.path,
+                ...(session.agentSessionId ? { resume: session.agentSessionId } : {}),
+                permissionMode: "acceptEdits" as const,
+            };
+            let resultText = "";
+            for await (const event of query({ prompt, options })) {
+                const item = event as any;
+                if (item.type === "tool_use" || item.type === "tool_result") {
+                    const tool = { id: crypto.randomUUID(), type: "tool", payload: { sessionId, name: item.name ?? item.tool_name ?? "tool", args: item.input ?? item.content, output: item.output ?? item.content } };
+                    await SessionModel.findByIdAndUpdate(sessionId, { $push: { conversation: tool } });
+                    await this.sendMessage(tool as any);
+                } else if (item.type === "assistant" && item.message?.content) {
+                    for (const block of item.message.content) if (block.type === "text") resultText += block.text;
+                } else if (item.type === "result") {
+                    resultText = item.result ?? resultText;
+                    if (item.session_id) await SessionModel.findByIdAndUpdate(sessionId, { agentSessionId: item.session_id });
+                }
+            }
+            const result = { id: crypto.randomUUID(), type: "result", payload: { sessionId, message: resultText } };
+            await SessionModel.findByIdAndUpdate(sessionId, { $push: { conversation: result } });
+            await this.sendMessage(result as any);
+        } catch (error) {
+            await this.sendMessage({ type: "error", payload: { sessionId, message: error instanceof Error ? error.message : "Agent failed" } });
+        }
     }
 }

@@ -1,7 +1,7 @@
 import z from 'zod';
 
 export const CreateWorkspaceSchema = z.object({
-    path: z.string(),
+    path: z.string().trim().min(1),
 })
 
 export type CreateWorkspaceSchemaType = z.infer<typeof CreateWorkspaceSchema>;
@@ -29,4 +29,3 @@ export type IncomingMessageType = {
     type : "add-message",
     payload : AddMessageSchemaType
 };
-

@@ -2,7 +2,7 @@ import { uuid } from "uuidv4"
 import { WebSocket } from "ws";
 import { User } from "./User";
 import { SessionModel, WorkspaceModel } from "db/client";
-import type { Workspace, Session } from "commons/types";
+import type { Workspace, Session, Message } from "commons/types";
 
 
 
@@ -28,18 +28,19 @@ export class UserManager {
         this.users.push(user);
 
         // make a quick db call at this line
-        const workspaces = await WorkspaceModel.find();
-        const sessions = await SessionModel.find();
+        const workspaces = await WorkspaceModel.find().lean();
+        const sessions = await SessionModel.find().lean();
 
         const response: Workspace[] = [];
 
         workspaces.forEach(w => {
             const finalSessions : Session[] = [];
             sessions.forEach(s => {
-                if (s.workspace?.toString() === w._id.toString()) {
+                if (s.workspaceId?.toString() === w._id.toString()) {
                     finalSessions.push({
                         id : s._id.toString(),
-                        messages : s.messages
+                        title: s.title ?? "New session",
+                        messages : (s.conversation ?? []) as Message[]
                     })
                 }
             })
@@ -54,10 +55,7 @@ export class UserManager {
         })
             
 
-        ws.send(JSON.stringify({
-            type: "init", 
-            workspaces : response
-        }))
+        await user.sendMessage({ type: "init", payload: { workspaces: response } });
 
         ws.on("message", async (msg) => {
             try {
