@@ -2,7 +2,8 @@ import { uuid } from "uuidv4"
 import { WebSocket } from "ws";
 import { User } from "./User";
 import { SessionModel, WorkspaceModel } from "db/client";
-import type { Workspace } from "commons/types";
+import type { Workspace, Session } from "commons/types";
+
 
 
 
@@ -22,7 +23,7 @@ export class UserManager {
     }
 
     async addUser(ws: WebSocket) {
-        const id = uuid()
+        const id = uuid();
         const user = new User(id, ws);
         this.users.push(user);
 
@@ -32,20 +33,25 @@ export class UserManager {
 
         const response: Workspace[] = [];
 
-        for (const w of workspaces) {
+        workspaces.forEach(w => {
+            const finalSessions : Session[] = [];
+            sessions.forEach(s => {
+                if (s.workspace?.toString() === w._id.toString()) {
+                    finalSessions.push({
+                        id : s._id.toString(),
+                        messages : s.messages
+                    })
+                }
+            })
             response.push({
                 id: w._id.toString(),
-                name: w.name ?? "",
+                name: w.name ?? "" ,
                 path: w.path ?? "",
-                sessions: []
+                sessions: finalSessions
             })
 
-            for (const s of sessions) {
-                if (s.workspaceId?.toString() === w._id.toString()) {
-                    
-                }
-            }
-        }
+            
+        })
             
 
         ws.send(JSON.stringify({
