@@ -71,7 +71,7 @@ export class User{
             await this.sendMessage({ type: "thinking", payload: { sessionId, message: "Agent is thinking…" } });
             const workspace = session.workspaceId;
             if (config.provider === "gemini") {
-                await this.runGemini(sessionId, prompt, config.model ?? "gemini-2.5-flash", config.apiKey ?? process.env.GEMINI_API_KEY);
+                await this.runGemini(sessionId, prompt, config.model ?? "gemini-3.6-flash", config.apiKey ?? process.env.GEMINI_API_KEY);
                 return;
             }
             const options = {

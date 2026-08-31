@@ -11,7 +11,7 @@ function useAppState() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>();
   const [activeSessionId, setActiveSessionId] = useState<string>();
-  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => { try { return JSON.parse(sessionStorage.getItem("oneui-model-config") ?? "null") ?? { provider: "anthropic", model: "claude-sonnet-4-5", apiKey: "" }; } catch { return { provider: "anthropic", model: "claude-sonnet-4-5", apiKey: "" }; } });
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => { try { const saved = JSON.parse(sessionStorage.getItem("oneui-model-config") ?? "null"); if (saved?.provider === "gemini" && saved.model !== "gemini-3.6-flash") saved.model = "gemini-3.6-flash"; return saved ?? { provider: "anthropic", model: "claude-sonnet-4-5", apiKey: "" }; } catch { return { provider: "anthropic", model: "claude-sonnet-4-5", apiKey: "" }; } });
   const processed = useRef(0);
   useEffect(() => { for (const raw of messages.slice(processed.current)) { const msg = raw as any;
     if (msg.type === "init") { const next = msg.payload.workspaces as Workspace[]; setWorkspaces(next); setActiveWorkspaceId(next[0]?.id); setActiveSessionId(next[0]?.sessions[0]?.id); }
