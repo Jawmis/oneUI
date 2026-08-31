@@ -14,7 +14,10 @@ export type CreateSessionSchemaType = z.infer<typeof CreateSessionSchema>;
 
 export const AddMessageSchema = z.object({
     sessionId: z.string(),
-    message : z.string()
+    message : z.string(),
+    provider: z.enum(["anthropic", "gemini"]).default("anthropic"),
+    model: z.string().min(1).optional(),
+    apiKey: z.string().min(1).optional(),
 })
 
 export type AddMessageSchemaType = z.infer<typeof AddMessageSchema>;

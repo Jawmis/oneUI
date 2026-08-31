@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.51",
+    "@google/genai": "^1.15.0",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.97",
     "@types/ws": "^8.18.1",

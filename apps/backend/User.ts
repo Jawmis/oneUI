@@ -2,6 +2,7 @@ import { AddMessageSchema, CreateSessionSchema, CreateWorkspaceSchema, type Inco
 import { SessionModel, WorkspaceModel } from "db/client";
 import { WebSocket } from "ws";
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { GoogleGenAI } from "@google/genai";
 
 export class User{
     private socket: WebSocket;
@@ -58,17 +59,21 @@ export class User{
                 $push: { conversation: { id: crypto.randomUUID(), type: "user", payload: { message: data.message } } }
             }, { new: true }).populate("workspaceId");
             if (!session) throw new Error("Session not found");
-            void this.runAgent(data.sessionId, data.message, session);
+            void this.runAgent(data.sessionId, data.message, session, data);
             return { type: "message-added", payload: { id: data.sessionId } };
         }
         throw new Error("Incorrect input schema");
 
     }
 
-    private async runAgent(sessionId: string, prompt: string, session: any) {
+    private async runAgent(sessionId: string, prompt: string, session: any, config: { provider?: "anthropic" | "gemini"; model?: string; apiKey?: string }) {
         try {
             await this.sendMessage({ type: "thinking", payload: { sessionId, message: "Agent is thinking…" } });
             const workspace = session.workspaceId;
+            if (config.provider === "gemini") {
+                await this.runGemini(sessionId, prompt, config.model ?? "gemini-2.5-flash", config.apiKey ?? process.env.GEMINI_API_KEY);
+                return;
+            }
             const options = {
                 cwd: workspace.path,
                 ...(session.agentSessionId ? { resume: session.agentSessionId } : {}),
@@ -94,5 +99,20 @@ export class User{
         } catch (error) {
             await this.sendMessage({ type: "error", payload: { sessionId, message: error instanceof Error ? error.message : "Agent failed" } });
         }
+    }
+
+    private async runGemini(sessionId: string, prompt: string, model: string, apiKey?: string) {
+        if (!apiKey) throw new Error("Add a Gemini API key in Model settings or set GEMINI_API_KEY in apps/backend/.env");
+        const ai = new GoogleGenAI({ apiKey });
+        const stream = await ai.models.generateContentStream({ model, contents: prompt });
+        let resultText = "";
+        for await (const chunk of stream) {
+            const text = chunk.text ?? "";
+            resultText += text;
+            await this.sendMessage({ type: "thinking", payload: { sessionId, message: "Gemini is generating…" } });
+        }
+        const result = { id: crypto.randomUUID(), type: "result", payload: { sessionId, message: resultText, provider: "gemini", model } };
+        await SessionModel.findByIdAndUpdate(sessionId, { $push: { conversation: result } });
+        await this.sendMessage(result as any);
     }
 }
