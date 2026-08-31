@@ -98,7 +98,11 @@ export class User{
             await this.sendMessage(result as any);
         } catch (error) {
             console.error(`[agent:${config.provider ?? "anthropic"}] session ${sessionId} failed`, error);
-            await this.sendMessage({ type: "error", payload: { sessionId, message: error instanceof Error ? error.message : "Agent failed" } });
+            const rawMessage = error instanceof Error ? error.message : "Agent failed";
+            const message = rawMessage.includes("API_KEY_INVALID") || rawMessage.includes("API key not valid")
+                ? "Gemini rejected this API key. Check the key in Model settings and try again."
+                : rawMessage.slice(0, 500);
+            await this.sendMessage({ type: "error", payload: { sessionId, message } });
         }
     }
 
