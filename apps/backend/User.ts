@@ -97,6 +97,7 @@ export class User{
             await SessionModel.findByIdAndUpdate(sessionId, { $push: { conversation: result } });
             await this.sendMessage(result as any);
         } catch (error) {
+            console.error(`[agent:${config.provider ?? "anthropic"}] session ${sessionId} failed`, error);
             await this.sendMessage({ type: "error", payload: { sessionId, message: error instanceof Error ? error.message : "Agent failed" } });
         }
     }

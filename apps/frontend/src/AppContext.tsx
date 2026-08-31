@@ -17,7 +17,7 @@ function useAppState() {
     if (msg.type === "init") { const next = msg.payload.workspaces as Workspace[]; setWorkspaces(next); setActiveWorkspaceId(next[0]?.id); setActiveSessionId(next[0]?.sessions[0]?.id); }
     else if (msg.type === "workspace-created") { setWorkspaces((items) => [...items, msg.payload]); setActiveWorkspaceId(msg.payload.id); }
     else if (msg.type === "session-created") { setWorkspaces((items) => items.map((w) => w.id === activeWorkspaceId ? { ...w, sessions: [...w.sessions, msg.payload] } : w)); setActiveSessionId(msg.payload.id); }
-    else if (["thinking", "tool", "result", "error"].includes(msg.type)) { const sid = msg.payload.sessionId; setWorkspaces((items) => items.map((w) => ({ ...w, sessions: w.sessions.map((s) => s.id === sid ? { ...s, messages: [...s.messages, { id: crypto.randomUUID(), type: msg.type, payload: msg.payload }] } : s) }))); }
+    else if (["thinking", "tool", "result", "error"].includes(msg.type)) { const sid = msg.payload.sessionId; setWorkspaces((items) => items.map((w) => ({ ...w, sessions: w.sessions.map((s) => { if (s.id !== sid) return s; const withoutStatus = s.messages.filter((item) => item.type !== "thinking"); const next = { id: crypto.randomUUID(), type: msg.type, payload: msg.payload }; return { ...s, messages: msg.type === "thinking" ? [...withoutStatus, next] : [...withoutStatus, next] }; }) }))); }
   processed.current = messages.length;
   } }, [messages, activeWorkspaceId]);
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
