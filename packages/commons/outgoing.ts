@@ -40,7 +40,7 @@ export type Workspace = {
     sessions : Session []
 }
 
-type Session  = {
+export type Session  = {
     id: string,
     messages : Message[]
 }
