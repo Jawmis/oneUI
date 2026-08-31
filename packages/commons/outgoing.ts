@@ -30,6 +30,9 @@ export type OutgoingMessageType =  {
 } | {
     type: "thinking" | "tool" | "result" | "error"
     payload: { sessionId: string; [key: string]: unknown }
+} | {
+    type: "session-deleted" | "workspace-deleted"
+    payload: { id: string }
 };
 
 export type Workspace = {

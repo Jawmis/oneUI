@@ -1,4 +1,4 @@
-import { AddMessageSchema, CreateSessionSchema, CreateWorkspaceSchema, type IncomingMessageType, type OutgoingMessageType } from "commons/types";
+import { AddMessageSchema, CreateSessionSchema, CreateWorkspaceSchema, DeleteSessionSchema, DeleteWorkspaceSchema, type IncomingMessageType, type OutgoingMessageType } from "commons/types";
 import { SessionModel, WorkspaceModel } from "db/client";
 import { WebSocket } from "ws";
 import { query } from "@anthropic-ai/claude-agent-sdk";
@@ -61,6 +61,21 @@ export class User{
             if (!session) throw new Error("Session not found");
             void this.runAgent(data.sessionId, data.message, session, data);
             return { type: "message-added", payload: { id: data.sessionId } };
+        }
+        if (msg.type === "delete-session") {
+            const { success, data } = DeleteSessionSchema.safeParse(msg.payload);
+            if (!success) throw new Error("Incorrect schema");
+            const deleted = await SessionModel.findByIdAndDelete(data.sessionId);
+            if (!deleted) throw new Error("Session not found");
+            return { type: "session-deleted", payload: { id: data.sessionId } };
+        }
+        if (msg.type === "delete-workspace") {
+            const { success, data } = DeleteWorkspaceSchema.safeParse(msg.payload);
+            if (!success) throw new Error("Incorrect schema");
+            const deleted = await WorkspaceModel.findByIdAndDelete(data.workspaceId);
+            if (!deleted) throw new Error("Workspace not found");
+            await SessionModel.deleteMany({ workspaceId: data.workspaceId });
+            return { type: "workspace-deleted", payload: { id: data.workspaceId } };
         }
         throw new Error("Incorrect input schema");
 

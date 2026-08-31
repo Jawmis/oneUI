@@ -22,6 +22,9 @@ export const AddMessageSchema = z.object({
 
 export type AddMessageSchemaType = z.infer<typeof AddMessageSchema>;
 
+export const DeleteSessionSchema = z.object({ sessionId: z.string() });
+export const DeleteWorkspaceSchema = z.object({ workspaceId: z.string() });
+
 export type IncomingMessageType = {
     type : "create-session",
     payload : CreateSessionSchemaType
@@ -31,4 +34,10 @@ export type IncomingMessageType = {
 } | {
     type : "add-message",
     payload : AddMessageSchemaType
+} | {
+    type: "delete-session",
+    payload: z.infer<typeof DeleteSessionSchema>
+} | {
+    type: "delete-workspace",
+    payload: z.infer<typeof DeleteWorkspaceSchema>
 };
