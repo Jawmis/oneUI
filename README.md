@@ -1,159 +1,50 @@
-# Turborepo starter
+# oneUI
 
-This Turborepo starter is maintained by the Turborepo core team.
+A local-first AI chat workspace for organizing conversations by project folder and session. The React client talks to a Bun WebSocket service; MongoDB stores workspaces, sessions, and conversation events. The backend can run Anthropic's Claude Agent SDK or Gemini.
 
-## Using this example
+This is a working prototype, not a hosted service. [Watch the product recording](https://jamisbade.com/oneui-demo.mov).
 
-Run the following command:
+## What it does
 
-```sh
-npx create-turbo@latest
-```
+- Create and delete workspaces and chat sessions; select a model and send prompts from the chat UI.
+- Keep the client and server message shapes in a shared `packages/commons` package with Zod validation on incoming events.
+- Persist conversation events in MongoDB and return session acknowledgements over each client's WebSocket connection.
 
-## What's inside?
+## Architecture
 
-This Turborepo includes the following packages/apps:
+| Path | Responsibility |
+| --- | --- |
+| `apps/frontend` | React 19 chat UI, model settings, WebSocket client |
+| `apps/backend` | Bun WebSocket server, session handling, Anthropic and Gemini adapters |
+| `packages/commons` | Shared incoming/outgoing event contracts |
+| `packages/db` | Mongoose workspace and session models |
 
-### Apps and Packages
+The WebSocket path sends replies to the requesting client; it is not a multi-user broadcast system. The Gemini adapter returns a completed response after generation rather than streaming individual tokens into the UI. API keys entered in the UI are held in browser session storage and sent to the local backend with the prompt. Use this as a local development workspace, not a public multi-tenant deployment.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Run locally
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Requires Bun 1.4, Node.js 24+, and a local MongoDB instance.
 
 ```sh
-cd my-turborepo
-turbo build
+bun install
 ```
 
-Without global `turbo`, use your package manager:
+Start the backend and frontend in separate terminals:
 
 ```sh
-cd my-turborepo
-npx turbo build
-bun exec turbo build
-bun exec turbo build
+cd apps/backend
+DB_URL=mongodb://127.0.0.1:27017/oneui bun index.ts
 ```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
 
 ```sh
-turbo build --filter=docs
+cd apps/frontend
+bun dev
 ```
 
-Without global `turbo`:
+Open `http://localhost:5174`. The backend listens on `ws://localhost:3000`. Set `VITE_BACKEND_URL` in the frontend environment if the backend is elsewhere. For Anthropic, configure credentials expected by the Claude Agent SDK; for Gemini, add a key in Model settings or set `GEMINI_API_KEY` for the backend.
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
-```
+## Current limits
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- Workspace paths and agent tool permissions assume a trusted local user. Do not expose the backend to untrusted clients.
+- WebSocket responses are per-client; shared live collaboration is not implemented.
+- The README makes no throughput or latency claims. Any load figures need a reproducible harness and environment details.
